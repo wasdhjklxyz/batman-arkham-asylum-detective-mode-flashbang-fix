@@ -1,13 +1,15 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define UPKG_SIGNATURE 0x9E2A83C1
+
 struct upkg_co {
   uint32_t count;
   uint32_t offset;
 };
 
 struct upkg_hdr {
-  uint32_t signature; // Always 0x9E2A83C1
+  uint32_t signature;
   uint16_t version;
   uint16_t license;
   uint32_t flags;
@@ -34,7 +36,12 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  printf("signature: %x\n", header.signature);
+  if (header.signature != UPKG_SIGNATURE) {
+    fprintf(stderr, "invalid signature\n");
+    fclose(fp);
+    return 1;
+  }
+
   printf("version: %x\n", header.version);
 
   fclose(fp);
