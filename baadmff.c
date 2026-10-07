@@ -7,6 +7,23 @@
 
 #define UPKG_SIGNATURE 0x9E2A83C1
 
+const char *parse_str(const void *in, size_t len, size_t *size) {
+  if (!in || !size || len < sizeof(int32_t))
+    return NULL;
+
+  const int32_t str_len = *(int32_t *)in;
+  if (str_len < 1 || (size_t)str_len > len - sizeof(int32_t))
+    return NULL;
+  in += sizeof(str_len);
+
+  const char *str = (char *)in;
+  if (str[str_len - 1] != '\0')
+    return NULL;
+
+  *size = str_len + sizeof(str_len);
+  return str;
+}
+
 int main(int argc, char **argv) {
   if (argc != 2)
     return 1;
@@ -52,6 +69,18 @@ int main(int argc, char **argv) {
   const int32_t size = *(int32_t *)in;
   printf("size: %d\n", size);
   in += sizeof(size);
+
+  size_t folder_name_size;
+  const char *folder_name = parse_str(
+      in, (size_t)st.st_size - (in - (uint8_t *)pa), &folder_name_size);
+  if (!folder_name) {
+    fprintf(stderr, "failed to parse string\n");
+    munmap(pa, st.st_size);
+    close(fd);
+    return 1;
+  }
+  printf("folder name: %s\n", folder_name);
+  in += folder_name_size;
 
   munmap(pa, st.st_size);
   close(fd);
