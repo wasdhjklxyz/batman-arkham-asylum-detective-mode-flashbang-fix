@@ -16,6 +16,7 @@ struct upkg_hdr {
   struct upkg_co name;
   struct upkg_co export;
   struct upkg_co import;
+  char guid[16];
 };
 
 int main(int argc, char **argv) {
