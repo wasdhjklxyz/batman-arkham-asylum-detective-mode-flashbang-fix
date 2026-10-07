@@ -67,16 +67,16 @@ int main(int argc, char **argv) {
   in += sizeof(signature);
 
   const uint16_t version = *(uint16_t *)in;
-  printf("version: %hu\n", version);
+  printf("Version: %hu\n", version);
   in += sizeof(version);
 
   const uint16_t license = *(uint16_t *)in;
-  printf("license: %d\n", license);
+  printf("Licensee Version: %hu\n", license);
   in += sizeof(license);
 
-  const int32_t size = *(int32_t *)in;
-  printf("size: %d\n", size);
-  in += sizeof(size);
+  const int32_t header_size = *(int32_t *)in;
+  printf("Header Size: %d\n", header_size);
+  in += sizeof(header_size);
 
   size_t folder_name_size;
   const char *folder_name = parse_str(
@@ -87,11 +87,11 @@ int main(int argc, char **argv) {
     close(fd);
     return 1;
   }
-  printf("folder name: %s\n", folder_name);
+  printf("Folder Name: %s\n", folder_name);
   in += folder_name_size;
 
   const uint32_t pkg_flags = *(int32_t *)in;
-  printf("flags: 0x%x\n", pkg_flags);
+  printf("Flags: 0x%x\n", pkg_flags);
   in += sizeof(pkg_flags);
 
   /* NameCount, NameOffset, ExportCount, ExportOffset,
@@ -110,15 +110,16 @@ int main(int argc, char **argv) {
   in += geninfo_list_len * UPKG_GENINFO_BYTES;
 
   const int32_t engine_version = *(int32_t *)in;
-  printf("engine version: %d\n", engine_version);
+  printf("Engine Version: %d\n", engine_version);
   in += sizeof(engine_version);
 
   const int32_t cooker_version = *(int32_t *)in;
-  printf("cooker version: %d\n", cooker_version);
+  printf("Cooker Version: %u/%u\n", cooker_version & 0xFFFF,
+         cooker_version >> 16); // name/type
   in += sizeof(cooker_version);
 
   const uint32_t compression_flag = *(int32_t *)in;
-  printf("compression flag: %d\n", compression_flag);
+  printf("Compression Flag: 0x%x\n", compression_flag);
   in += sizeof(compression_flag);
 
   munmap(pa, st.st_size);
