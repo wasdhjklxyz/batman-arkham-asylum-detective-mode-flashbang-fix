@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  printf("version: %x\n", header.version);
+  printf("version: %hu\n", header.version);
 
   fclose(fp);
   return 0;
