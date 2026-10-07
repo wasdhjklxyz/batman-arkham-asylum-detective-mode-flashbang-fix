@@ -90,10 +90,14 @@ int main(int argc, char **argv) {
   printf("folder name: %s\n", folder_name);
   in += folder_name_size;
 
-  /* PackageFlags, NameCount, NameOffset, ExportCount, ExportOffset,
+  const uint32_t pkg_flags = *(int32_t *)in;
+  printf("flags: 0x%x\n", pkg_flags);
+  in += sizeof(pkg_flags);
+
+  /* NameCount, NameOffset, ExportCount, ExportOffset,
    * ImportCount, ImportOffset, DependsOffset, GUID
    */
-  in += (sizeof(uint32_t) * 8) + UPKG_GUID_BYTES;
+  in += (sizeof(uint32_t) * 7) + UPKG_GUID_BYTES;
 
   const int32_t geninfo_list_len = *(int32_t *)in;
   if (geninfo_list_len < 0) {
