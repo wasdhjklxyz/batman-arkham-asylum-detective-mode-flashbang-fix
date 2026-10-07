@@ -8,10 +8,16 @@ struct upkg_co {
   uint32_t offset;
 };
 
+/**
+ * Unreal Engine package file header
+ *
+ * https://eliotvu.com/page/unreal-package-file-format
+ */
 struct upkg_hdr {
   uint32_t signature;
   uint16_t version;
   uint16_t license;
+  int32_t size; // NOTE: Ref site says "Int32" for type
   uint32_t flags;
   struct upkg_co name;
   struct upkg_co export;
@@ -44,6 +50,7 @@ int main(int argc, char **argv) {
   }
 
   printf("version: %hu\n", header.version);
+  printf("size: %d\n", header.size);
 
   fclose(fp);
   return 0;
