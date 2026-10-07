@@ -1,11 +1,13 @@
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #define UPKG_SIGNATURE 0x9E2A83C1
+#define UPKG_GUID_BYTES 16
 
 const char *parse_str(const uint8_t *in, size_t len, size_t *size) {
   if (!in || !size || len < sizeof(int32_t))
@@ -81,6 +83,11 @@ int main(int argc, char **argv) {
   }
   printf("folder name: %s\n", folder_name);
   in += folder_name_size;
+
+  /* PackageFlags, NameCount, NameOffset, ExportCount, ExportOffset,
+   * ImportCount, ImportOffset, DependsOffset, GUID
+   */
+  in += (sizeof(uint32_t) * 8) + UPKG_GUID_BYTES;
 
   munmap(pa, st.st_size);
   close(fd);
