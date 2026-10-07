@@ -7,7 +7,7 @@
 
 #define UPKG_SIGNATURE 0x9E2A83C1
 
-const char *parse_str(const void *in, size_t len, size_t *size) {
+const char *parse_str(const uint8_t *in, size_t len, size_t *size) {
   if (!in || !size || len < sizeof(int32_t))
     return NULL;
 
