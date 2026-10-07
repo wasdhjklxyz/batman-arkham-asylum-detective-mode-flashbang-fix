@@ -9,6 +9,12 @@
 #define UPKG_SIGNATURE 0x9E2A83C1
 #define UPKG_GUID_BYTES 16
 
+/**
+ * Size of the "GenerationInfo" object. For UE3, three int32s.
+ * https://github.com/gildor2/UEViewer/blob/master/Unreal/UnrealPackage/UnPackage.h#L21
+ */
+#define UPKG_GENINFO_BYTES (sizeof(int32_t) * 3)
+
 const char *parse_str(const uint8_t *in, size_t len, size_t *size) {
   if (!in || !size || len < sizeof(int32_t))
     return NULL;
@@ -88,6 +94,28 @@ int main(int argc, char **argv) {
    * ImportCount, ImportOffset, DependsOffset, GUID
    */
   in += (sizeof(uint32_t) * 8) + UPKG_GUID_BYTES;
+
+  const int32_t geninfo_list_len = *(int32_t *)in;
+  if (geninfo_list_len < 0) {
+    fprintf(stderr, "invalid length for generation info list\n");
+    munmap(pa, st.st_size);
+    close(fd);
+    return 1;
+  }
+  in += sizeof(geninfo_list_len);
+  in += geninfo_list_len * UPKG_GENINFO_BYTES;
+
+  const int32_t engine_version = *(int32_t *)in;
+  printf("engine version: %d\n", engine_version);
+  in += sizeof(engine_version);
+
+  const int32_t cooker_version = *(int32_t *)in;
+  printf("cooker version: %d\n", cooker_version);
+  in += sizeof(cooker_version);
+
+  const uint32_t compression_flag = *(int32_t *)in;
+  printf("compression flag: %d\n", compression_flag);
+  in += sizeof(compression_flag);
 
   munmap(pa, st.st_size);
   close(fd);
