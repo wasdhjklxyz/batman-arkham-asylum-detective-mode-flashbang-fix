@@ -1,57 +1,59 @@
+#include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define UPKG_SIGNATURE 0x9E2A83C1
-
-struct upkg_co {
-  uint32_t count;
-  uint32_t offset;
-};
-
-/**
- * Unreal Engine package file header
- *
- * https://eliotvu.com/page/unreal-package-file-format
- */
-struct upkg_hdr {
-  uint32_t signature;
-  uint16_t version;
-  uint16_t license;
-  int32_t size; // NOTE: Ref site says "Int32" for type
-  uint32_t flags;
-  struct upkg_co name;
-  struct upkg_co export;
-  struct upkg_co import;
-  char guid[16];
-};
 
 int main(int argc, char **argv) {
   if (argc != 2)
     return 1;
 
-  FILE *fp = fopen(argv[1], "r");
-  if (!fp) {
-    perror("fopen");
+  const int fd = open(argv[1], O_RDONLY);
+  if (fd == -1) {
+    perror("open");
     return 1;
   }
 
-  struct upkg_hdr header = {0};
-  if (fread(&header, sizeof(header), 1, fp) != 1) {
-    // FIXME: Use feof() or ferror() to test if actually an error
-    perror("fread");
-    fclose(fp);
+  struct stat st = {0};
+  if (fstat(fd, &st) != 0) {
+    perror("fstat");
+    close(fd);
     return 1;
   }
 
-  if (header.signature != UPKG_SIGNATURE) {
+  void *pa = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+  if (pa == MAP_FAILED) {
+    perror("mmap");
+    close(fd);
+    return 1;
+  }
+
+  const uint8_t *in = pa;
+  const uint32_t signature = *(uint32_t *)in;
+  if (signature != UPKG_SIGNATURE) {
     fprintf(stderr, "invalid signature\n");
-    fclose(fp);
+    munmap(pa, st.st_size);
+    close(fd);
     return 1;
   }
+  in += sizeof(signature);
 
-  printf("version: %hu\n", header.version);
-  printf("size: %d\n", header.size);
+  const uint16_t version = *(uint16_t *)in;
+  printf("version: %hu\n", version);
+  in += sizeof(version);
 
-  fclose(fp);
+  const uint16_t license = *(uint16_t *)in;
+  printf("license: %d\n", license);
+  in += sizeof(license);
+
+  const int32_t size = *(int32_t *)in;
+  printf("size: %d\n", size);
+  in += sizeof(size);
+
+  munmap(pa, st.st_size);
+  close(fd);
   return 0;
 }
