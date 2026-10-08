@@ -145,6 +145,8 @@ const char *upkg_strerror(upkg_err err) {
     return "invalid signature";
   case UPKG_TRUNC:
     return "truncated";
+  case UPKG_BADIDX:
+    return "malformed index";
   case UPKG_BADSTR:
     return "invalid string";
   default:
