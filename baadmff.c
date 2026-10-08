@@ -1,36 +1,10 @@
 #include <fcntl.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define UPKG_SIGNATURE 0x9E2A83C1
-#define UPKG_GUID_BYTES 16
-
-/**
- * Size of the "GenerationInfo" object. For UE3, three int32s.
- * https://github.com/gildor2/UEViewer/blob/master/Unreal/UnrealPackage/UnPackage.h#L21
- */
-#define UPKG_GENINFO_BYTES (sizeof(int32_t) * 3)
-
-const char *parse_str(const uint8_t *in, size_t len, size_t *size) {
-  if (!in || !size || len < sizeof(int32_t))
-    return NULL;
-
-  const int32_t str_len = *(int32_t *)in;
-  if (str_len < 1 || (size_t)str_len > len - sizeof(int32_t))
-    return NULL;
-  in += sizeof(str_len);
-
-  const char *str = (char *)in;
-  if (str[str_len - 1] != '\0')
-    return NULL;
-
-  *size = str_len + sizeof(str_len);
-  return str;
-}
+#include "upkg.h"
 
 int main(int argc, char **argv) {
   if (argc != 2)
@@ -56,71 +30,25 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  const uint8_t *in = pa;
-  const uint32_t signature = *(uint32_t *)in;
-  if (signature != UPKG_SIGNATURE) {
-    fprintf(stderr, "invalid signature\n");
+  struct upkg pkg;
+  size_t pos;
+  upkg_err err = upkg_parse(pa, (size_t)st.st_size, &pkg, &pos);
+  if (err != UPKG_OK) {
+    fprintf(stderr, "upkg_parse: %s at 0x%zx\n", upkg_strerror(err), pos);
     munmap(pa, st.st_size);
     close(fd);
     return 1;
   }
-  in += sizeof(signature);
 
-  const uint16_t version = *(uint16_t *)in;
-  printf("Version: %hu\n", version);
-  in += sizeof(version);
-
-  const uint16_t license = *(uint16_t *)in;
-  printf("Licensee Version: %hu\n", license);
-  in += sizeof(license);
-
-  const int32_t header_size = *(int32_t *)in;
-  printf("Header Size: %d\n", header_size);
-  in += sizeof(header_size);
-
-  size_t folder_name_size;
-  const char *folder_name = parse_str(
-      in, (size_t)st.st_size - (in - (uint8_t *)pa), &folder_name_size);
-  if (!folder_name) {
-    fprintf(stderr, "failed to parse string\n");
-    munmap(pa, st.st_size);
-    close(fd);
-    return 1;
-  }
-  printf("Folder Name: %s\n", folder_name);
-  in += folder_name_size;
-
-  const uint32_t pkg_flags = *(int32_t *)in;
-  printf("Flags: 0x%x\n", pkg_flags);
-  in += sizeof(pkg_flags);
-
-  /* NameCount, NameOffset, ExportCount, ExportOffset,
-   * ImportCount, ImportOffset, DependsOffset, GUID
-   */
-  in += (sizeof(uint32_t) * 7) + UPKG_GUID_BYTES;
-
-  const int32_t geninfo_list_len = *(int32_t *)in;
-  if (geninfo_list_len < 0) {
-    fprintf(stderr, "invalid length for generation info list\n");
-    munmap(pa, st.st_size);
-    close(fd);
-    return 1;
-  }
-  in += sizeof(geninfo_list_len);
-  in += geninfo_list_len * UPKG_GENINFO_BYTES;
-
-  const int32_t engine_version = *(int32_t *)in;
-  printf("Engine Version: %d\n", engine_version);
-  in += sizeof(engine_version);
-
-  const int32_t cooker_version = *(int32_t *)in;
-  printf("Cooker Version: %u/%u\n", cooker_version & 0xFFFF,
-         cooker_version >> 16); // name/type
-  in += sizeof(cooker_version);
-
-  const uint32_t compression_flag = *(int32_t *)in;
-  printf("Compression Flag: 0x%x\n", compression_flag);
-  in += sizeof(compression_flag);
+  printf("Version: %hu\n", pkg.version);
+  printf("Licensee Version: %hu\n", pkg.licensee_version);
+  printf("Header Size: %d\n", pkg.header_size);
+  printf("Folder Name: %s\n", pkg.folder_name.data);
+  printf("Flags: 0x%x\n", pkg.flags);
+  printf("Engine Version: %d\n", pkg.engine_version);
+  printf("Cooker Version: %hu/%hu\n", pkg.cooker_version & 0xFFFF,
+         pkg.cooker_version >> 16); // name/type
+  printf("Compression Flag: %u\n", pkg.compression_flag);
 
   munmap(pa, st.st_size);
   close(fd);
