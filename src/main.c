@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
   printf("Cooker Version: %hu/%hu\n", pkg.cooker_version & 0xFFFF,
          pkg.cooker_version >> 16); // name/type
   printf("Compression Flag: %u\n", pkg.compression_flag);
+  printf("Compressed Chunks: %d\n", pkg.chunk_count);
 
   munmap(pa, st.st_size);
   close(fd);

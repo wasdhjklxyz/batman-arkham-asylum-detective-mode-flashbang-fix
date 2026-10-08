@@ -16,6 +16,17 @@ struct upkg_str {
 };
 
 /**
+ * Unreal Engine package compressed chunk.
+ * https://github.com/gildor2/UEViewer/blob/master/Unreal/UnrealPackage/UnPackage.h#L45
+ */
+struct upkg_chunk {
+  int32_t u_offset; // uncompressed offset
+  int32_t u_size;   // uncompressed size
+  int32_t c_offset; // compressed offset
+  int32_t c_size;   // compressed size
+};
+
+/**
  * Unreal Engine package structure for versions <= 576.
  * https://eliotvu.com/page/unreal-package-file-format
  */
@@ -28,6 +39,8 @@ struct upkg {
   int32_t engine_version;
   int32_t cooker_version;
   uint32_t compression_flag;
+  int32_t chunk_count;
+  size_t chunk_table; // offset from file
 };
 
 typedef enum {

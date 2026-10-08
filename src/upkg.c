@@ -134,6 +134,10 @@ upkg_err upkg_parse(const uint8_t *in, size_t len, struct upkg *out,
   p.cooker_version = read_i32(&c);
   p.compression_flag = read_u32(&c);
 
+  p.chunk_count = read_count(&c);
+  p.chunk_table = c.offset;
+  skip(&c, sizeof(struct upkg_chunk) * p.chunk_count);
+
   *pos = c.offset;
   if (c.err != UPKG_OK)
     return c.err;
