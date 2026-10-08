@@ -1,5 +1,5 @@
 OUT := baadmff
-SRC := $(OUT).c upkg.c
+SRC := main.c upkg.c
 
 CFLAGS := -Wall -Wextra -Wpedantic -Werror
 
