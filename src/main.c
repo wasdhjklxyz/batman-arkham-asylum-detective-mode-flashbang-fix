@@ -1,3 +1,9 @@
+/**
+ * main.c - Batman: Arkham Asylum detective mode flashbang fix
+ *
+ * Copyright (C) 2026 uiop <uiop@wasdhjkl.xyz>
+ */
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/mman.h>

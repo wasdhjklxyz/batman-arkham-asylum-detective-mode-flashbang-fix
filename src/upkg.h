@@ -1,3 +1,9 @@
+/**
+ * upkg.h - Unreal Engine package parser
+ *
+ * Copyright (C) 2026 uiop <uiop@wasdhjkl.xyz>
+ */
+
 #ifndef BAADMFF_UPKG_H
 #define BAADMFF_UPKG_H
 

@@ -1,3 +1,9 @@
+/**
+ * upkg.c - Unreal Engine package parser
+ *
+ * Copyright (C) 2026 uiop <uiop@wasdhjkl.xyz>
+ */
+
 #include <stdbool.h>
 #include <string.h>
 
