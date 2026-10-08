@@ -59,7 +59,7 @@ typedef enum {
  *
  * On success fills `*out` and returns `UPKG_OK`. `out->folder_name.data` points
  * into `in` and lives as long as it does. On failure, `*out` is untouched and
- * the return value indicates why (see `upkg_strerr()`). `*pos` is where the
+ * the return value indicates why (see `upkg_strerror()`). `*pos` is where the
  * cursor stopped.
  */
 upkg_err upkg_parse(const uint8_t *in, size_t len, struct upkg *out,
