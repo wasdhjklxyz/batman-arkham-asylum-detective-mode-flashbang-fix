@@ -9,13 +9,23 @@ MINILZO := lib/minilzo-2.10
 OUT   := baadmff
 SRC   := src/main.c src/upkg.c $(MINILZO)/minilzo.c
 
-CFLAGS := -Wall -Wextra -Wpedantic -Werror
+CFLAGS := -std=c23 -Wall -Wextra -Wpedantic -Werror
 CFLAGS += -I$(MINILZO)
 
-.PHONY: all clean
+SAN    := -fsanitize=address,undefined
+DBG    := -g -Og -U_FORTIFY_SOURCE $(SAN)
+REL    := -O2 -DNDEBUG
 
-all: $(SRC)
-	$(CC) $^ $(CFLAGS) -o $(OUT)
+debug: CFLAGS += $(DBG)
+debug: LDFLAGS += $(SAN)
+debug: $(SRC)
+	$(CC) $(CFLAGS) -o $(OUT) $^ $(LDFLAGS)
+
+release: CFLAGS += $(REL)
+release: $(SRC)
+	$(CC) $(CFLAGS) -o $(OUT) $^ $(LDFLAGS)
 
 clean:
 	$(RM) $(OUT)
+
+.PHONY: debug release clean
