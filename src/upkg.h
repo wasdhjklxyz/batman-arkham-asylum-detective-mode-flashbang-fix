@@ -20,10 +20,10 @@ struct upkg_str {
  * https://github.com/gildor2/UEViewer/blob/master/Unreal/UnrealPackage/UnPackage.h#L45
  */
 struct upkg_chunk {
-  int32_t u_offset; // uncompressed offset
-  int32_t u_size;   // uncompressed size
-  int32_t c_offset; // compressed offset
-  int32_t c_size;   // compressed size
+  size_t u_offset; // uncompressed offset
+  size_t u_size;   // uncompressed size
+  size_t c_offset; // compressed offset
+  size_t c_size;   // compressed size
 };
 
 /**
@@ -39,7 +39,7 @@ struct upkg {
   int32_t engine_version;
   int32_t cooker_version;
   uint32_t compression_flag;
-  int32_t chunk_count;
+  size_t chunk_count;
   size_t chunk_table; // offset from file
 };
 
@@ -50,6 +50,11 @@ typedef enum {
   UPKG_TRUNC,
   UPKG_BADIDX,
   UPKG_BADSTR,
+  UPKG_NOMEM,
+  UPKG_UNSUPPORTED,
+  UPKG_BADCHUNK,
+  UPKG_BADSIZE,
+  UPKG_BADLZO,
 } upkg_err;
 
 /**
@@ -64,6 +69,15 @@ typedef enum {
  */
 upkg_err upkg_parse(const uint8_t *in, size_t len, struct upkg *out,
                     size_t *pos);
+
+/**
+ * Decompress Unreal Engine package chunks.
+ *
+ * Returns `UPKG_OK` on success or if no compression is used. On error, return
+ * value indicates why (see `upkg_strerror()`).
+ */
+upkg_err upkg_decompress(const uint8_t *in, size_t len, const struct upkg *pkg,
+                         uint8_t **out, size_t *out_len);
 
 /**
  * Returns pointer to a string that describes the error code passed.

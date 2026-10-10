@@ -6,6 +6,7 @@
 
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -55,9 +56,34 @@ int main(int argc, char **argv) {
   printf("Cooker Version: %hu/%hu\n", pkg.cooker_version & 0xFFFF,
          pkg.cooker_version >> 16); // name/type
   printf("Compression Flag: %u\n", pkg.compression_flag);
-  printf("Compressed Chunks: %d\n", pkg.chunk_count);
+  printf("Compressed Chunks: %zu\n", pkg.chunk_count);
+
+  uint8_t *buf;
+  size_t buf_len;
+  err = upkg_decompress(pa, (size_t)st.st_size, &pkg, &buf, &buf_len);
+  if (err != UPKG_OK) {
+    fprintf(stderr, "upkg_decompress: %s\n", upkg_strerror(err));
+    munmap(pa, st.st_size);
+    close(fd);
+    return 1;
+  }
 
   munmap(pa, st.st_size);
   close(fd);
+
+  FILE *fp = fopen("decompressed.u", "w");
+  if (!fp) {
+    perror("fopen");
+    return 1;
+  }
+  if (fwrite(buf, 1, buf_len, fp) != buf_len) {
+    perror("fwrite");
+    fclose(fp);
+    free(buf);
+    return 1;
+  }
+
+  fclose(fp);
+  free(buf);
   return 0;
 }
