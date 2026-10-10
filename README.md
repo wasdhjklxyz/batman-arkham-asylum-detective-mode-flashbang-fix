@@ -39,7 +39,7 @@ one is stored uncompressed (~100 MB). The game loads both just fine.
 **Steam Deck / Linux?** Same steps. Or build the CLI (below) and run
 `./baadmff path/to/BmGame.u`, which keeps a `BmGame.u.bak` for you.
 
-**Anything else change?** Scan mode (riddles, beatle things) used
+**Anything else change?** Scan mode (riddles, beetle things) used
 the same flash, so that's gone too. Nothing else noticed so far. If you spot
 something, open an issue.
 
