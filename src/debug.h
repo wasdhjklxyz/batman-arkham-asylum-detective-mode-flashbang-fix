@@ -13,15 +13,22 @@
 
 #ifndef NDEBUG
 
+// Both preserve errno, callers report it after logging
+
 #define DEBUG(fmt, ...)                                                        \
-  fprintf(stderr, "%s:%d:%s: " fmt "\n", __FILE__, __LINE__,                   \
-          __func__ __VA_OPT__(, ) __VA_ARGS__)
+  do {                                                                         \
+    int log_errno_ = errno;                                                    \
+    fprintf(stderr, "%s:%d:%s: " fmt "\n", __FILE__, __LINE__,                 \
+            __func__ __VA_OPT__(, ) __VA_ARGS__);                              \
+    errno = log_errno_;                                                        \
+  } while (0)
 
 #define PDEBUG(fmt, ...)                                                       \
   do {                                                                         \
     int log_errno_ = errno;                                                    \
     fprintf(stderr, "%s:%d:%s: " fmt ": %s\n", __FILE__, __LINE__,             \
             __func__ __VA_OPT__(, ) __VA_ARGS__, strerror(log_errno_));        \
+    errno = log_errno_;                                                        \
   } while (0)
 
 #else // NDEBUG
