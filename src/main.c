@@ -6,10 +6,14 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "debug.h"
 #include "io.h"
+#include "patch.h"
 #include "upkg.h"
+
+#define BAK_SUFFIX ".bak"
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -17,10 +21,15 @@ int main(int argc, char **argv) {
           argc);
     return 1;
   }
-  DEBUG("input: %s", argv[1]);
+  const char *path = argv[1];
+  DEBUG("input: %s", path);
+
+  int ret = 1;
+  uint8_t *buf = NULL;
+  char *bak = NULL;
 
   struct io_map in;
-  if (io_map_file(argv[1], &in) != 0)
+  if (io_map_file(path, &in) != 0)
     return 1;
 
   struct upkg pkg;
@@ -28,8 +37,7 @@ int main(int argc, char **argv) {
   upkg_err err = upkg_parse(in.pa, in.len, &pkg, &pos);
   if (err != UPKG_OK) {
     DEBUG("upkg_parse: %s at 0x%zx", upkg_strerror(err), pos);
-    io_unmap(&in);
-    return 1;
+    goto out;
   }
   DEBUG("summary ends at 0x%zx", pos);
 
@@ -44,18 +52,55 @@ int main(int argc, char **argv) {
   DEBUG("Compression Flag: %u", pkg.compression_flag);
   DEBUG("Compressed Chunks: %zu", pkg.chunk_count);
 
-  uint8_t *buf;
   size_t buf_len;
   err = upkg_decompress(in.pa, in.len, &pkg, &buf, &buf_len);
-  size_t in_len = in.len;
-  io_unmap(&in); // WARN: pkg.folder_name points into the map, dead after this
   if (err != UPKG_OK) {
     DEBUG("upkg_decompress: %s", upkg_strerror(err));
-    return 1;
+    goto out;
   }
-  DEBUG("decompressed: %zu -> %zu bytes", in_len, buf_len);
+  DEBUG("decompressed: %zu -> %zu bytes", in.len, buf_len);
 
-  int ret = io_write_file("decompressed.u", buf, buf_len) == 0 ? 0 : 1;
+  switch (patch_apply(buf, buf_len)) {
+  case PATCH_OK:
+    break;
+  case PATCH_ALREADY:
+    DEBUG("%s already patched, nothing to do", path);
+    ret = 0;
+    goto out;
+  case PATCH_NOTFOUND:
+    DEBUG("patch site not found (wrong file or game version?)");
+    goto out;
+  case PATCH_AMBIGUOUS:
+    DEBUG("patch site ambiguous, refusing to guess");
+    goto out;
+  }
+
+  size_t plen = strlen(path);
+  bak = malloc(plen + sizeof(BAK_SUFFIX));
+  if (!bak) {
+    PDEBUG("malloc");
+    goto out;
+  }
+  memcpy(bak, path, plen);
+  memcpy(bak + plen, BAK_SUFFIX, sizeof(BAK_SUFFIX));
+
+  if (io_exists(bak)) {
+    DEBUG("%s exists, keeping it", bak);
+  } else if (io_write_file(bak, in.pa, in.len) != 0) {
+    DEBUG("backup to %s failed, not touching %s", bak, path);
+    goto out;
+  }
+
+  io_unmap(&in); // WARN: pkg.folder_name points into the map, dead after this
+
+  if (io_write_file(path, buf, buf_len) != 0)
+    goto out;
+  DEBUG("patched %s (backup: %s)", path, bak);
+  ret = 0;
+
+out:
+  io_unmap(&in);
+  free(bak);
   free(buf);
   return ret;
 }
