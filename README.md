@@ -4,11 +4,9 @@ Toggling detective mode in *Batman: Arkham Asylum* blasts your screen white.
 Play in a dark room and it's a flashbang. This removes the flash. Detective
 mode itself works exactly the same.
 
-<!-- TODO: before/after gifs
 | Before | After |
 | --- | --- |
-| ![before](docs/before.gif) | ![after](docs/after.gif) |
--->
+| ![before: screen flashes white entering detective mode](docs/before.gif) | ![after: straight into detective mode, no flash](docs/after.gif) |
 
 ## Fix it
 
