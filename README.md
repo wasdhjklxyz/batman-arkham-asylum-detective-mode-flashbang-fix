@@ -1,8 +1,7 @@
-# Arkham Asylum Flashbang Fix
+# Batman: Arkham Asylum Flashbang Fix
 
-Toggling detective mode in *Batman: Arkham Asylum* blasts your screen white.
-Play in a dark room and it's a flashbang. This removes the flash. Detective
-mode itself works exactly the same.
+Toggling detective mode in flashbangs you. This removes the flash (which makes
+the game playable imo).
 
 | Before | After |
 | --- | --- |
@@ -13,13 +12,13 @@ mode itself works exactly the same.
 **[Open the fixer](https://wasdhjklxyz.github.io/batman-arkham-asylum-detective-mode-flashbang-fix/)**
 
 1. In Steam, right-click **Batman: Arkham Asylum GOTY Edition** → **Manage** →
-   **Browse local files**, then open **BmGame** → **CookedPC**.
+   **Browse local files**, then go to **BmGame** → **CookedPC**.
 2. Drag **BmGame.u** onto the page.
 3. Download the fixed file. In **CookedPC**, rename the original to
    **BmGame.u.bak** (your backup), then put the download there as **BmGame.u**.
 
 Nothing gets uploaded. The patch runs inside your browser and you get the file
-back as a download. Nothing to install, no exe to trust.
+back as a download. Nothing to install, no sus exe.
 
 ## Undo
 
@@ -40,8 +39,9 @@ one is stored uncompressed (~100 MB). The game loads both just fine.
 **Steam Deck / Linux?** Same steps. Or build the CLI (below) and run
 `./baadmff path/to/BmGame.u`, which keeps a `BmGame.u.bak` for you.
 
-**Anything else change?** Scan mode used the same flash, so that's gone too.
-Nothing else noticed so far. If you spot something, open an issue.
+**Anything else change?** Scan mode (riddles, beatle things) used
+the same flash, so that's gone too. Nothing else noticed so far. If you spot
+something, open an issue.
 
 ## How it works
 
@@ -53,10 +53,10 @@ Detective mode fades the flash in and out through
 
 To get there, the fixer:
 
-1. parses the UE3 package summary (version 576, licensee 21)
-2. decompresses the LZO chunks, giving the same result as gildor's
-   `decompress.exe`
-3. finds the 18-byte function body (exactly one match, or it refuses), patches
+1. Parses the UE3 package summary (version 576, licensee 21)
+2. Decompresses the LZO chunks, giving the same result as [Gildor's
+   `decompress.exe`](https://www.gildor.org/downloads)
+3. Finds the 18-byte function body (exactly one match, or it refuses), patches
    it, and writes the package back uncompressed
 
 ## Build
