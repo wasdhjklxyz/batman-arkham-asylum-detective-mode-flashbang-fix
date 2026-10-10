@@ -4,14 +4,11 @@
  * Copyright (C) 2026 uiop <uiop@wasdhjkl.xyz>
  */
 
-#include <fcntl.h>
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
 #include "debug.h"
+#include "io.h"
 #include "upkg.h"
 
 int main(int argc, char **argv) {
@@ -22,35 +19,16 @@ int main(int argc, char **argv) {
   }
   DEBUG("input: %s", argv[1]);
 
-  const int fd = open(argv[1], O_RDONLY);
-  if (fd == -1) {
-    PDEBUG("open %s", argv[1]);
+  struct io_map in;
+  if (io_map_file(argv[1], &in) != 0)
     return 1;
-  }
-
-  struct stat st = {0};
-  if (fstat(fd, &st) != 0) {
-    PDEBUG("fstat %s", argv[1]);
-    close(fd);
-    return 1;
-  }
-  DEBUG("fd=%d size=%lld", fd, (long long)st.st_size);
-
-  void *pa = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-  if (pa == MAP_FAILED) {
-    PDEBUG("mmap %lld bytes", (long long)st.st_size);
-    close(fd);
-    return 1;
-  }
-  DEBUG("mapped @%p", pa);
 
   struct upkg pkg;
   size_t pos;
-  upkg_err err = upkg_parse(pa, (size_t)st.st_size, &pkg, &pos);
+  upkg_err err = upkg_parse(in.pa, in.len, &pkg, &pos);
   if (err != UPKG_OK) {
     DEBUG("upkg_parse: %s at 0x%zx", upkg_strerror(err), pos);
-    munmap(pa, st.st_size);
-    close(fd);
+    io_unmap(&in);
     return 1;
   }
   DEBUG("summary ends at 0x%zx", pos);
@@ -68,32 +46,16 @@ int main(int argc, char **argv) {
 
   uint8_t *buf;
   size_t buf_len;
-  err = upkg_decompress(pa, (size_t)st.st_size, &pkg, &buf, &buf_len);
+  err = upkg_decompress(in.pa, in.len, &pkg, &buf, &buf_len);
+  size_t in_len = in.len;
+  io_unmap(&in); // WARN: pkg.folder_name points into the map, dead after this
   if (err != UPKG_OK) {
     DEBUG("upkg_decompress: %s", upkg_strerror(err));
-    munmap(pa, st.st_size);
-    close(fd);
     return 1;
   }
-  DEBUG("decompressed: %lld -> %zu bytes", (long long)st.st_size, buf_len);
+  DEBUG("decompressed: %zu -> %zu bytes", in_len, buf_len);
 
-  munmap(pa, st.st_size);
-  close(fd);
-
-  FILE *fp = fopen("decompressed.u", "w");
-  if (!fp) {
-    PDEBUG("fopen decompressed.u");
-    return 1;
-  }
-  if (fwrite(buf, 1, buf_len, fp) != buf_len) {
-    PDEBUG("fwrite %zu bytes", buf_len);
-    fclose(fp);
-    free(buf);
-    return 1;
-  }
-  DEBUG("wrote %zu bytes to decompressed.u", buf_len);
-
-  fclose(fp);
+  int ret = io_write_file("decompressed.u", buf, buf_len) == 0 ? 0 : 1;
   free(buf);
-  return 0;
+  return ret;
 }

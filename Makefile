@@ -7,7 +7,7 @@
 MINILZO := lib/minilzo-2.10
 
 OUT   := baadmff
-SRC   := src/main.c src/upkg.c $(MINILZO)/minilzo.c
+SRC   := src/main.c src/upkg.c src/io.c $(MINILZO)/minilzo.c
 
 CFLAGS := -std=c23 -Wall -Wextra -Wpedantic -Werror
 CFLAGS += -I$(MINILZO)
