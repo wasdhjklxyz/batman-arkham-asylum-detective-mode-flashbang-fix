@@ -36,6 +36,7 @@ struct upkg {
   int32_t header_size;
   struct upkg_str folder_name;
   uint32_t flags;
+  size_t flags_offset; // offset from file
   int32_t engine_version;
   int32_t cooker_version;
   uint32_t compression_flag;

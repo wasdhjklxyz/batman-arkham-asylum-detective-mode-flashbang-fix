@@ -25,6 +25,8 @@
 #define UPKG_COMPRESSION_NONE 0
 #define UPKG_COMPRESSION_LZO 2
 
+#define UPKG_PKG_STORE_COMPRESSED 0x02000000
+
 #define UPKG_CHUNK_BYTES 16     // 4x i32
 #define UPKG_CHUNK_HDR_BYTES 16 // 4x i32
 #define UPKG_BLOCK_ENT_BYTES 8  // { c_size, u_size }
@@ -259,6 +261,7 @@ upkg_err upkg_parse(const uint8_t *in, size_t len, struct upkg *out,
   p.licensee_version = read_u16(&c);
   p.header_size = read_i32(&c);
   p.folder_name = read_str(&c);
+  p.flags_offset = c.offset;
   p.flags = read_u32(&c);
   DEBUG("version=%u licensee=%u header_size=%" PRId32 " folder=\"%.*s\" "
         "flags=0x%08" PRIx32,
@@ -352,8 +355,8 @@ upkg_err upkg_decompress(const uint8_t *in, size_t len, const struct upkg *pkg,
   if (c.err != UPKG_OK)
     return c.err;
 
-  /* Bytes before chunk 0 are the summary, stored verbatim. It must at least
-   * cover the chunk table we're about to rewrite in the output
+  /* Bytes before chunk 0 are the summary, stored verbatim. Uncompressed offsets
+   * assume the chunk table is gone, so u_offset must be c_offset minus it
    */
   if (first.c_offset < pkg->chunk_table + pkg->chunk_count * UPKG_CHUNK_BYTES ||
       first.c_offset - pkg->chunk_count * UPKG_CHUNK_BYTES != first.u_offset) {
@@ -370,17 +373,17 @@ upkg_err upkg_decompress(const uint8_t *in, size_t len, const struct upkg *pkg,
     PDEBUG("malloc(%zu)", end);
     return UPKG_NOMEM;
   }
-  memcpy(buf, in, first.u_offset);
-
+  /* Summary minus the chunk table: no compression, zero chunks */
   size_t tbl_end = pkg->chunk_table + pkg->chunk_count * UPKG_CHUNK_BYTES;
   memcpy(buf, in, pkg->chunk_table);
+  write_u32(buf + pkg->flags_offset, pkg->flags & ~UPKG_PKG_STORE_COMPRESSED);
   write_u32(buf + pkg->chunk_table - 8, UPKG_COMPRESSION_NONE);
   write_u32(buf + pkg->chunk_table - 4, 0);
   memcpy(buf + pkg->chunk_table, in + tbl_end, first.c_offset - tbl_end);
 
   /**
    * Pass 2
-   *  Decompress, and identity-map each table entry in the output
+   *  Decompress each chunk to its uncompressed offset
    */
   DEBUG("pass 2: decompressing");
   c = table;
@@ -393,12 +396,7 @@ upkg_err upkg_decompress(const uint8_t *in, size_t len, const struct upkg *pkg,
       free(buf);
       return e;
     }
-    uint8_t *ent = buf + pkg->chunk_table + i * UPKG_CHUNK_BYTES;
-    write_u32(ent + 8, (uint32_t)ch.u_offset);
-    write_u32(ent + 12, (uint32_t)ch.u_size);
   }
-  write_u32(buf + pkg->chunk_table - 8,
-            UPKG_COMPRESSION_NONE); // flags precede count
 
   DEBUG("decompressed %zu -> %zu bytes", len, end);
   *out = buf;
