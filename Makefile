@@ -34,10 +34,10 @@ release: CFLAGS += $(REL)
 release: $(SRC)
 	$(CC) $(CFLAGS) -o $(OUT) $^ $(LDFLAGS)
 
-web: $(CORE) web/index.html web/app.js
+web: $(CORE) $(wildcard web/*)
 	mkdir -p $(WEB)
 	$(EMCC) $(CFLAGS) $(EMFLAGS) -o $(WEB)/baadmff.js $(CORE)
-	cp web/index.html web/app.js $(WEB)/
+	cp -r web/. $(WEB)/
 
 clean:
 	$(RM) $(OUT)
