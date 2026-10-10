@@ -1,7 +1,7 @@
 # Batman: Arkham Asylum Flashbang Fix
 
-Toggling detective mode in flashbangs you. This removes the flash (which makes
-the game playable imo).
+Toggling detective mode flashbangs you. This removes the flash (which makes the
+game playable imo).
 
 | Before | After |
 | --- | --- |
