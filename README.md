@@ -12,8 +12,8 @@ mode itself works exactly the same.
 
 **[Open the fixer](https://wasdhjklxyz.github.io/batman-arkham-asylum-detective-mode-flashbang-fix/)**
 
-1. In Steam, right-click **Batman: Arkham Asylum Game of the Year Edition** →
-   **Manage** → **Browse local files**, then open **BmGame** → **CookedPC**.
+1. In Steam, right-click **Batman: Arkham Asylum GOTY Edition** → **Manage** →
+   **Browse local files**, then open **BmGame** → **CookedPC**.
 2. Drag **BmGame.u** onto the page.
 3. Download the fixed file. In **CookedPC**, rename the original to
    **BmGame.u.bak** (your backup), then put the download there as **BmGame.u**.
