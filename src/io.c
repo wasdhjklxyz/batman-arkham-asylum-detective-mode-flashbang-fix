@@ -154,3 +154,5 @@ fail: {
 }
   return -1;
 }
+
+bool io_exists(const char *path) { return path && access(path, F_OK) == 0; }

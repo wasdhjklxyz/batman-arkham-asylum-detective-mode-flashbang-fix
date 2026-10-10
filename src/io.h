@@ -7,6 +7,7 @@
 #ifndef BAADMFF_IO_H
 #define BAADMFF_IO_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -31,5 +32,12 @@ void io_unmap(struct io_map *m);
  * Returns 0 on success, -1 with errno set on failure (path untouched).
  */
 int io_write_file(const char *path, const void *buf, size_t len);
+
+/**
+ * True if path exists (any file type).
+ *
+ * WARN: Racy by nature
+ */
+bool io_exists(const char *path);
 
 #endif // BAADMFF_IO_H
