@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arkham Asylum Flashbang Fix</title>
+<meta name="description" content="Stop the white flash when toggling detective mode in Batman: Arkham Asylum. Runs in your browser, nothing is uploaded.">
+<style>
+:root {
+  --bg: #fff; --fg: #111; --dim: #666; --line: #ddd;
+  --accent: #1a5fd0; --ok: #1a7f37; --bad: #c62828;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0e0f11; --fg: #e6e6e6; --dim: #999; --line: #2a2c30;
+          --accent: #6ea8ff; --ok: #4ac26b; --bad: #ff6b6b; }
+}
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 40rem; padding: 2rem 1rem;
+       background: var(--bg); color: var(--fg);
+       font: 16px/1.55 system-ui, sans-serif; }
+h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+h2 { font-size: 1.1rem; margin: 2rem 0 .5rem; }
+p, ol { margin: .5rem 0; }
+code { font-size: .9em; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+.dim { color: var(--dim); }
+#drop { display: block; margin: 1rem 0; padding: 2rem 1rem; text-align: center;
+        border: 2px dashed var(--line); border-radius: 8px; cursor: pointer; }
+#drop.over { border-color: var(--accent); }
+#drop input { display: none; }
+#status { min-height: 1.5rem; font-weight: 600; }
+#status.ok { color: var(--ok); } #status.bad { color: var(--bad); }
+#save { display: inline-block; padding: .6rem 1rem; border-radius: 6px;
+        background: var(--accent); color: var(--bg); font-weight: 600;
+        text-decoration: none; }
+[hidden] { display: none !important; }
+pre { max-height: 20rem; overflow: auto; padding: .5rem;
+      border: 1px solid var(--line); border-radius: 6px; font-size: .75rem; }
+footer { margin-top: 3rem; font-size: .85rem; }
+</style>
+</head>
+<body>
+<h1>Arkham Asylum Flashbang Fix</h1>
+<p>Stops the blinding white flash every time you toggle detective mode in
+<i>Batman: Arkham Asylum</i>. Nothing else changes.</p>
+<p class="dim">Your file is never uploaded. It is patched right here in your
+browser, then handed back to you as a download.</p>
+
+<h2>1. Find your BmGame.u</h2>
+<ol>
+  <li>In Steam, right-click <b>Batman: Arkham Asylum Game of the Year Edition</b> &rarr;
+      <b>Manage</b> &rarr; <b>Browse local files</b>.</li>
+  <li>Open <b>BmGame</b>, then <b>CookedPC</b>.</li>
+  <li>Find <b>BmGame.u</b> (about 60&nbsp;MB).</li>
+</ol>
+<p class="dim">Usually <code>C:\Program Files (x86)\Steam\steamapps\common\Batman Arkham Asylum GOTY\BmGame\CookedPC\BmGame.u</code></p>
+
+<h2>2. Drop it here</h2>
+<label id="drop">
+  <input id="file" type="file">
+  Drag <b>BmGame.u</b> here, or click to choose it
+</label>
+<p id="status" role="status"></p>
+
+<section id="done" hidden>
+  <h2>3. Put it in the game</h2>
+  <p><a id="save" download="BmGame.u">Download fixed BmGame.u</a></p>
+  <ol>
+    <li>Close the game if it's running.</li>
+    <li>In <b>CookedPC</b>, rename your current <b>BmGame.u</b> to
+        <b>BmGame.u.bak</b>. That's your backup.</li>
+    <li>Move the downloaded <b>BmGame.u</b> into <b>CookedPC</b>. If your
+        browser named it <code>BmGame (1).u</code>, rename it to exactly
+        <b>BmGame.u</b>.</li>
+    <li>Play. No more flashbang.</li>
+  </ol>
+  <p class="dim">The new file is bigger (about 100&nbsp;MB). That's expected,
+  it's stored uncompressed now.</p>
+</section>
+
+<h2>Undo</h2>
+<p>Delete the fixed <b>BmGame.u</b> and rename <b>BmGame.u.bak</b> back to
+<b>BmGame.u</b>. Or in Steam: <b>Properties</b> &rarr; <b>Installed Files</b>
+&rarr; <b>Verify integrity of game files</b>. Heads up, verifying also undoes
+the fix if you run it later.</p>
+
+<details>
+  <summary>Log</summary>
+  <pre id="log"></pre>
+</details>
+
+<footer class="dim">
+  Only the Steam GOTY Edition is tested. Something broke?
+  <a href="https://github.com/wasdhjklxyz/batman-arkham-asylum-detective-mode-flashbang-fix/issues">Open an issue</a>
+  and paste the log.<br>
+  <a href="https://github.com/wasdhjklxyz/batman-arkham-asylum-detective-mode-flashbang-fix">Source</a>
+  &middot; GPL-2.0 &middot; Not affiliated with Rocksteady or Warner Bros.
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

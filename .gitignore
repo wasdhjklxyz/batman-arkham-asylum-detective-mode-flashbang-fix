@@ -2,3 +2,5 @@
 *.u.bak
 baadmff
 compile_commands.json
+build/
+result
