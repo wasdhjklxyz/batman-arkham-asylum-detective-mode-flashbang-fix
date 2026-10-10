@@ -4,21 +4,25 @@
  * Copyright (C) 2026 uiop <uiop@wasdhjkl.xyz>
  */
 
+#include <errno.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "baadmff.h"
 #include "debug.h"
 #include "io.h"
-#include "patch.h"
-#include "upkg.h"
 
 #define BAK_SUFFIX ".bak"
 
+#define ERR(fmt, ...)                                                          \
+  fprintf(stderr, "baadmff: " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
+
 int main(int argc, char **argv) {
   if (argc != 2) {
-    DEBUG("usage: %s <BmGame.u> (got argc=%d)", argc > 0 ? argv[0] : "baadmff",
-          argc);
+    ERR("usage: %s <path/to/BmGame/CookedPC/BmGame.u>",
+        argc > 0 ? argv[0] : "baadmff");
     return 1;
   }
   const char *path = argv[1];
@@ -29,56 +33,27 @@ int main(int argc, char **argv) {
   char *bak = NULL;
 
   struct io_map in;
-  if (io_map_file(path, &in) != 0)
+  if (io_map_file(path, &in) != 0) {
+    ERR("%s: %s", path, strerror(errno));
     return 1;
-
-  struct upkg pkg;
-  size_t pos;
-  upkg_err err = upkg_parse(in.pa, in.len, &pkg, &pos);
-  if (err != UPKG_OK) {
-    DEBUG("upkg_parse: %s at 0x%zx", upkg_strerror(err), pos);
-    goto out;
   }
-  DEBUG("summary ends at 0x%zx", pos);
-
-  DEBUG("Version: %hu", pkg.version);
-  DEBUG("Licensee Version: %hu", pkg.licensee_version);
-  DEBUG("Header Size: %d", pkg.header_size);
-  DEBUG("Folder Name: %s", pkg.folder_name.data);
-  DEBUG("Flags: 0x%x", pkg.flags);
-  DEBUG("Engine Version: %d", pkg.engine_version);
-  DEBUG("Cooker Version: %hu/%hu", pkg.cooker_version & 0xFFFF,
-        pkg.cooker_version >> 16); // name/type
-  DEBUG("Compression Flag: %u", pkg.compression_flag);
-  DEBUG("Compressed Chunks: %zu", pkg.chunk_count);
 
   size_t buf_len;
-  err = upkg_decompress(in.pa, in.len, &pkg, &buf, &buf_len);
-  if (err != UPKG_OK) {
-    DEBUG("upkg_decompress: %s", upkg_strerror(err));
-    goto out;
-  }
-  DEBUG("decompressed: %zu -> %zu bytes", in.len, buf_len);
-
-  switch (patch_apply(buf, buf_len)) {
-  case PATCH_OK:
-    break;
-  case PATCH_ALREADY:
-    DEBUG("%s already patched, nothing to do", path);
+  enum baadmff_status s = baadmff_patch(in.pa, in.len, &buf, &buf_len);
+  if (s == BAADMFF_ALREADY) {
+    printf("baadmff: %s: %s\n", path, baadmff_strerror(s));
     ret = 0;
     goto out;
-  case PATCH_NOTFOUND:
-    DEBUG("patch site not found (wrong file or game version?)");
-    goto out;
-  case PATCH_AMBIGUOUS:
-    DEBUG("patch site ambiguous, refusing to guess");
+  }
+  if (s != BAADMFF_OK) {
+    ERR("%s: %s", path, baadmff_strerror(s));
     goto out;
   }
 
   size_t plen = strlen(path);
   bak = malloc(plen + sizeof(BAK_SUFFIX));
   if (!bak) {
-    PDEBUG("malloc");
+    ERR("%s", strerror(errno));
     goto out;
   }
   memcpy(bak, path, plen);
@@ -87,15 +62,17 @@ int main(int argc, char **argv) {
   if (io_exists(bak)) {
     DEBUG("%s exists, keeping it", bak);
   } else if (io_write_file(bak, in.pa, in.len) != 0) {
-    DEBUG("backup to %s failed, not touching %s", bak, path);
+    ERR("%s: %s (not touching %s)", bak, strerror(errno), path);
     goto out;
   }
 
-  io_unmap(&in); // WARN: pkg.folder_name points into the map, dead after this
+  io_unmap(&in);
 
-  if (io_write_file(path, buf, buf_len) != 0)
+  if (io_write_file(path, buf, buf_len) != 0) {
+    ERR("%s: %s", path, strerror(errno));
     goto out;
-  DEBUG("patched %s (backup: %s)", path, bak);
+  }
+  printf("baadmff: patched %s (backup: %s)\n", path, bak);
   ret = 0;
 
 out:
